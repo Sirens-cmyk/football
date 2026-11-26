@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>باشگاه فوتسال | پنل مدیریت سانس</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+  <style>
+    body {
+      font-family: 'Vazirmatn', sans-serif;
+      background-color: #070B14;
+      color: #F3F4F6;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .barca-header {
+      background: linear-gradient(135deg, #002B5B 0%, #0A1128 50%, #5C0029 100%);
+      border-bottom: 1px solid rgba(237, 187, 0, 0.25);
+    }
+    .glass-card {
+      background: rgba(17, 25, 45, 0.88);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .gold-accent { color: #EDBB00; }
+    .btn-gold {
+      background: linear-gradient(135deg, #EDBB00 0%, #D4A000 100%);
+      color: #070B14;
+      font-weight: 800;
+    }
+    .btn-blaugrana {
+      background: linear-gradient(90deg, #004D98 0%, #A50044 100%);
+      color: #FFFFFF;
+    }
+    .tab-active {
+      color: #EDBB00;
+      border-top: 2px solid #EDBB00;
+      background: rgba(237, 187, 0, 0.08);
+    }
+    ::-webkit-scrollbar { width: 0px; background: transparent; }
+  </style>
+</head>
+<body class="pb-24">
+
+  <!-- هدر اطلاعات سانس -->
+  <header class="barca-header p-4 rounded-b-3xl shadow-2xl sticky top-0 z-30">
+    <div class="flex justify-between items-center mb-3">
+      <div class="flex items-center gap-2.5">
+        <div class="w-10 h-10 rounded-xl btn-blaugrana flex items-center justify-center shadow-lg border border-yellow-400/30">
+          <span class="text-xl">⚽</span>
+        </div>
+        <div>
+          <h1 class="text-base font-extrabold tracking-tight text-white">سانس هفتگی فوتسال</h1>
+          <p id="hdrLocation" class="text-xs text-gray-300">در حال بارگذاری...</p>
+        </div>
+      </div>
+      <button onclick="loadData()" class="p-2 rounded-xl bg-white/10 active:scale-95 transition text-sm">🔄</button>
+    </div>
+
+    <!-- باکس تاریخ، ساعت و سهم محاسبه شده هر نفر -->
+    <div class="grid grid-cols-3 gap-2 bg-black/40 p-2.5 rounded-2xl border border-white/10 text-center">
+      <div>
+        <span class="text-[10px] text-gray-400 block">تاریخ سانس</span>
+        <span id="hdrDate" class="text-xs font-bold text-white">---</span>
+      </div>
+      <div class="border-x border-white/10">
+        <span class="text-[10px] text-gray-400 block">ساعت بازی</span>
+        <span id="hdrTime" class="text-xs font-bold gold-accent">---</span>
+      </div>
+      <div>
+        <span class="text-[10px] text-gray-400 block">سهم هر نفر (خودکار)</span>
+        <span id="hdrFee" class="text-xs font-extrabold text-emerald-400">---</span>
+      </div>
+    </div>
+    <div class="mt-2 flex justify-between items-center text-[10px] text-gray-300 px-1">
+      <span>اجاره کل سالن: <strong id="hdrTotalRent" class="text-white">0</strong> تومان</span>
+      <span>تعداد کل نفرات حاضر: <strong id="hdrTotalHeadcount" class="gold-accent">0</strong> نفر</span>
+    </div>
+  </header>
+
+  <!-- محتوای اصلی -->
+  <main class="p-4 max-w-md mx-auto space-y-4">
+
+    <!-- تب ۱: ثبت حضور / غیاب و پروفایل -->
+    <section id="tab-register" class="space-y-4">
+      <!-- کارت شماره کارت -->
+      <div class="glass-card p-4 rounded-2xl">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs text-gray-400">شماره کارت جهت واریز سهم سانس:</span>
+          <span class="text-[11px] px-2 py-0.5 rounded-full bg-yellow-500/15 gold-accent font-semibold">کپی با لمس</span>
+        </div>
+        <div onclick="copyCard()" class="bg-black/40 p-3 rounded-xl border border-yellow-500/30 flex justify-between items-center cursor-pointer active:scale-98 transition">
+          <span id="cardNumberDisplay" class="font-mono text-base font-bold tracking-wider text-white" dir="ltr">---- ---- ---- ----</span>
+          <span class="text-xs gold-accent">📋 کپی</span>
+        </div>
+        <p class="text-xs text-gray-300 mt-2">به نام: <strong id="cardOwnerDisplay" class="text-white">---</strong></p>
+      </div>
+
+      <!-- فرم اعلام وضعیت و پروفایل بازیکن -->
+      <div class="glass-card p-4 rounded-2xl space-y-4">
+        <h2 class="text-sm font-bold gold-accent flex items-center gap-2">
+          <span>📝</span> پروفایل من و وضعیت حضور
+        </h2>
+
+        <!-- بخش انتخاب عکس پروفایل -->
+        <div class="flex items-center gap-3 bg-black/30 p-3 rounded-xl border border-white/10">
+          <label class="relative cursor-pointer group">
+            <img id="avatarPreview" src="https://ui-avatars.com/api/?name=Player&background=004D98&color=EDBB00&bold=true" class="w-14 h-14 rounded-full object-cover border-2 border-yellow-400" />
+            <span class="absolute bottom-0 right-0 bg-yellow-400 text-black text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold">📷</span>
+            <input type="file" accept="image/*" class="hidden" onchange="handleAvatarUpload(event)" />
+          </label>
+          <div class="flex-1">
+            <p class="text-xs font-bold text-white">عکس پروفایل ورزشی</p>
+            <p class="text-[10px] text-gray-400">روی دایره لمس کنید تا عکس خودتان در لیست تیم نمایش داده شود (اختیاری).</p>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs text-gray-300 block mb-1">نام و نام خانوادگی شما:</label>
+          <input type="text" id="playerName" placeholder="مثلاً: علی رضایی" class="w-full bg-black/40 border border-white/15 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-yellow-500" />
+        </div>
+
+        <div>
+          <label class="text-xs text-gray-300 block mb-1">شماره موبایل (اختیاری):</label>
+          <input type="tel" id="playerPhone" placeholder="0912..." class="w-full bg-black/40 border border-white/15 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-yellow-500" dir="ltr" />
+        </div>
+
+        <!-- دکمه‌های انتخاب حضور یا غیاب -->
+        <div class="grid grid-cols-2 gap-3">
+          <button type="button" id="btnPresent" onclick="selectStatus('present')" class="p-3 rounded-xl border-2 border-emerald-500 bg-emerald-500/20 text-emerald-300 font-bold text-xs flex flex-col items-center gap-1 transition">
+            <span class="text-lg">✅</span>
+            <span>این هفته هستم</span>
+          </button>
+          <button type="button" id="btnAbsent" onclick="selectStatus('absent')" class="p-3 rounded-xl border border-white/15 bg-black/30 text-gray-400 font-bold text-xs flex flex-col items-center gap-1 transition">
+            <span class="text-lg">❌</span>
+            <span>این هفته نیستم</span>
+          </button>
+        </div>
+
+        <!-- بخش آپلود فیش -->
+        <div id="receiptSection" class="space-y-2 pt-2 border-t border-white/10">
+          <label class="text-xs text-gray-300 block">آپلود عکس فیش واریزی:</label>
+          <label class="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-yellow-500/40 rounded-xl cursor-pointer bg-black/30 hover:bg-black/50 transition">
+            <div id="uploadPlaceholder" class="flex flex-col items-center justify-center pt-2 pb-2">
+              <span class="text-2xl mb-1">🧾</span>
+              <p class="text-xs text-gray-300">انتخاب عکس فیش از گالری</p>
+            </div>
+            <img id="receiptPreview" class="hidden h-24 object-contain rounded-lg" />
+            <input id="receiptInput" type="file" accept="image/*" class="hidden" onchange="handleReceiptUpload(event)" />
+          </label>
+        </div>
+
+        <button onclick="submitPlayer()" class="w-full py-3.5 rounded-xl btn-gold text-sm shadow-lg active:scale-98 transition">
+          ثبت نهایی در لیست
+        </button>
+      </div>
+    </section>
+
+    <!-- تب ۲: لیست بازیکنان -->
+    <section id="tab-list" class="hidden space-y-4">
+      <div class="grid grid-cols-3 gap-2 text-center">
+        <div class="glass-card p-3 rounded-2xl">
+          <span id="countPresent" class="text-lg font-extrabold text-emerald-400 block">0</span>
+          <span class="text-[11px] text-gray-400">بازیکن حاضر</span>
+        </div>
+        <div class="glass-card p-3 rounded-2xl">
+          <span id="countGuests" class="text-lg font-extrabold gold-accent block">0</span>
+          <span class="text-[11px] text-gray-400">مهمان‌ها</span>
+        </div>
+        <div class="glass-card p-3 rounded-2xl">
+          <span id="countAbsent" class="text-lg font-extrabold text-rose-400 block">0</span>
+          <span class="text-[11px] text-gray-400">غایبین</span>
+        </div>
+      </div>
+
+      <div class="glass-card p-4 rounded-2xl">
+        <h3 class="text-sm font-bold text-white mb-3 flex items-center justify-between">
+          <span>🏃‍♂️ ترکیب بازیکنان اصلی</span>
+          <span class="text-[11px] text-gray-400">وضعیت حضور و واریز</span>
+        </h3>
+        <div id="playersListContainer" class="space-y-2.5"></div>
+      </div>
+    </section>
+
+    <!-- تب ۳: بخش مهمان‌ها -->
+    <section id="tab-guests" class="hidden space-y-4">
+      <div class="glass-card p-4 rounded-2xl space-y-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🤝</span>
+          <div>
+            <h2 class="text-sm font-bold gold-accent">معرفی بازیکن مهمان</h2>
+            <p class="text-[11px] text-gray-400">هر مهمان به تعداد کل نفرات اضافه شده و هزینه سانس را سرشکن می‌کند.</p>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs text-gray-300 block mb-1">نام بازیکن مهمان:</label>
+          <input type="text" id="guestName" placeholder="مثلاً: سجاد محمدی" class="w-full bg-black/40 border border-white/15 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-yellow-500" />
+        </div>
+
+        <div>
+          <label class="text-xs text-gray-300 block mb-1">معرف (از طرف چه کسی دعوت شده؟):</label>
+          <input type="text" id="invitedBy" placeholder="نام خودتان را بنویسید" class="w-full bg-black/40 border border-white/15 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-yellow-500" />
+        </div>
+
+        <button onclick="submitGuest()" class="w-full py-3 rounded-xl btn-blaugrana font-bold text-sm shadow-lg active:scale-98 transition">
+          + ثبت مهمان در لیست سانس
+        </button>
+      </div>
+
+      <div class="glass-card p-4 rounded-2xl">
+        <h3 class="text-sm font-bold text-white mb-3">📋 لیست مهمان‌های این هفته</h3>
+        <div id="guestsListContainer" class="space-y-2.5"></div>
+      </div>
+    </section>
+
+    <!-- تب ۴: پنل مدیریت جامع -->
+    <section id="tab-admin" class="hidden space-y-4">
+      <!-- ورود مدیر (بدون هیچ اشاره‌ای به رمز پیش‌فرض) -->
+      <div id="adminLoginBox" class="glass-card p-5 rounded-2xl text-center space-y-3">
+        <span class="text-3xl block">🔐</span>
+        <h2 class="text-sm font-bold text-white">ورود به پنل سرپرست تیم</h2>
+        <p class="text-xs text-gray-400">برای دسترسی به تنظیمات و مدیریت اعضا رمز عبور را وارد کنید.</p>
+        <input type="password" id="adminPassInput" placeholder="رمز عبور مدیریت" class="w-full bg-black/40 border border-white/15 rounded-xl p-3 text-center text-sm text-white focus:outline-none focus:border-yellow-500" />
+        <button onclick="unlockAdmin()" class="w-full py-3 rounded-xl btn-gold text-sm">تایید و ورود</button>
+      </div>
+
+      <!-- داشبورد کامل مدیر -->
+      <div id="adminDashboard" class="hidden space-y-4">
+        
+        <!-- ۱. تنظیمات سانس، مبلغ اجاره و تغییر رمز -->
+        <div class="glass-card p-4 rounded-2xl space-y-3">
+          <h3 class="text-sm font-bold gold-accent">⚙️ تنظیمات سانس و امور مالی</h3>
+          <div>
+            <label class="text-[11px] text-gray-400">تاریخ سانس:</label>
+            <input type="text" id="setDate" class="w-full bg-black/40 border border-white/15 rounded-xl p-2.5 text-xs text-white" />
+          </div>
+          <div>
+            <label class="text-[11px] text-gray-400">ساعت سانس:</label>
+            <input type="text" id="setTime" class="w-full bg-black/40 border border-white/15 rounded-xl p-2.5 text-xs text-white" />
+          </div>
+          <div>
+            <label class="text-[11px] text-gray-400">نام سالن ورزشی:</label>
+            <input type="text" id="setLocation" class="w-full bg-black/40 border border-white/15 rounded-xl p-2.5 text-xs text-white" />
+          </div>
+          <div>
+            <label class="text-[11px] text-gray-400">مبلغ کل اجاره سانس (به تومان - فقط عدد وارد کنید):</label>
+            <input type="number" id="setTotalRent" placeholder="مثلاً 1800000" class="w-full bg-black/40 border border-yellow-500/40 rounded-xl p-2.5 text-xs text-white" dir="ltr" />
+          </div>
+          <div>
+            <label class="text-[11px] text-gray-400">شماره کارت:</label>
+            <input type="text" id="setCard" class="w-full bg-black/40 border border-white/15 rounded-xl p-2.5 text-xs text-white" dir="ltr" />
+          </div>
+          <div>
+            <label class="text-[11px] text-gray-400">نام صاحب کارت:</label>
+            <input type="text" id="setOwner" class="w-full bg-black/40 border border-white/15 rounded-xl p-2.5 text-xs text-white" />
+          </div>
+          <div class="pt-2 border-t border-white/10">
+            <label class="text-[11px] text-yellow-400">تغییر رمز ورود مدیر (اگر نمی‌خواهید عوض شود خالی بگذارید):</label>
+            <input type="text" id="setNewAdminPass" placeholder="رمز جدید..." class="w-full bg-black/40 border border-white/15 rounded-xl p-2.5 text-xs text-white mt-1" />
+          </div>
+          <button onclick="saveAdminSettings()" class="w-full py-2.5 rounded-xl btn-gold text-xs">ذخیره تمام تنظیمات</button>
+        </div>
+
+        <!-- ۲. بررسی فیش‌های واریزی -->
+        <div class="glass-card p-4 rounded-2xl space-y-3">
+          <h3 class="text-sm font-bold text-white">🧾 بررسی و تایید فیش‌های واریزی</h3>
+          <div id="adminReceiptsContainer" class="space-y-3"></div>
+        </div>
+
+        <!-- ۳. مدیریت کامل بازیکنان اصلی (افزودن، تغییر وضعیت، حذف) -->
+        <div class="glass-card p-4 rounded-2xl space-y-3">
+          <h3 class="text-sm font-bold text-white">🏃‍♂️ مدیریت بازیکنان اصلی (افزودن / حذف / حضور)</h3>
+          <div class="flex gap-2">
+            <input type="text" id="adminNewPlayerName" placeholder="نام بازیکن جدید..." class="flex-1 bg-black/40 border border-white/15 rounded-xl p-2.5 text-xs text-white" />
+            <button onclick="adminAddPlayer()" class="px-4 py-2 rounded-xl btn-blaugrana text-xs font-bold">+ افزودن</button>
+          </div>
+          <div id="adminPlayersContainer" class="space-y-2 pt-2"></div>
+        </div>
+
+        <!-- ۴. مدیریت مهمان‌ها (تسویه یا حذف) -->
+        <div class="glass-card p-4 rounded-2xl space-y-3">
+          <h3 class="text-sm font-bold text-white">🤝 مدیریت مهمان‌ها (تسویه / حذف)</h3>
+          <div id="adminGuestsContainer" class="space-y-2"></div>
+        </div>
+
+        <!-- ۵. ریست هفته جدید -->
+        <div class="glass-card p-4 rounded-2xl border border-rose-500/30 space-y-2">
+          <h3 class="text-sm font-bold text-rose-400">🔄 شروع هفته جدید (ریست وضعیت‌ها)</h3>
+          <p class="text-[11px] text-gray-400">وضعیت حضور بازیکنان نامشخص می‌شود، فیش‌های قبلی پاک شده و لیست مهمان‌ها خالی می‌گردد (اسامی و عکس پروفایل بازیکنان اصلی حفظ می‌شود).</p>
+          <button onclick="resetNewWeek()" class="w-full py-2.5 rounded-xl bg-rose-600/80 text-white font-bold text-xs">ریست کردن برای سانس جدید</button>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- مودال نمایش بزرگ عکس فیش یا پروفایل -->
+  <div id="imageModal" onclick="closeModal()" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4">
+    <img id="modalImg" src="" class="max-h-[80vh] max-w-full rounded-xl border border-yellow-500/50 shadow-2xl" />
+    <span class="mt-4 text-xs text-gray-300 bg-white/10 px-4 py-2 rounded-full">برای بستن لمس کنید</span>
+  </div>
+
+  <!-- نوار ناوبری پایین -->
+  <nav class="fixed bottom-0 inset-x-0 bg-[#0A0F1D]/95 backdrop-blur-md border-t border-white/10 grid grid-cols-4 text-center z-40">
+    <button onclick="switchTab('register')" id="nav-register" class="py-2.5 flex flex-col items-center gap-1 tab-active">
+      <span class="text-lg">📝</span>
+      <span class="text-[10px] font-bold">ثبت حضور</span>
+    </button>
+    <button onclick="switchTab('list')" id="nav-list" class="py-2.5 flex flex-col items-center gap-1 text-gray-400">
+      <span class="text-lg">👥</span>
+      <span class="text-[10px] font-bold">لیست تیم</span>
+    </button>
+    <button onclick="switchTab('guests')" id="nav-guests" class="py-2.5 flex flex-col items-center gap-1 text-gray-400">
+      <span class="text-lg">🤝</span>
+      <span class="text-[10px] font-bold">مهمان‌ها</span>
+    </button>
+    <button onclick="switchTab('admin')" id="nav-admin" class="py-2.5 flex flex-col items-center gap-1 text-gray-400">
+      <span class="text-lg">⚙️</span>
+      <span class="text-[10px] font-bold">مدیریت</span>
+    </button>
+  </nav>
+
+  <!-- لودینگ -->
+  <div id="loader" class="hidden fixed inset-0 bg-black/75 z-50 flex items-center justify-center">
+    <div class="glass-card px-6 py-4 rounded-2xl flex items-center gap-3">
+      <div class="w-5 h-5 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
+      <span class="text-xs font-bold text-white">در حال همگام‌سازی...</span>
+    </div>
+  </div>
+
+  <script>
+    // 🔴 لینک Web App گوگل اسکریپت خود را اینجا جایگزین کنید:
+    const SCRIPT_URL = "https://script.google.com/macros/s/YOUR_SCRIPT_ID_HERE/exec";
+
+    let appData = { settings: {}, players: [], guests: [] };
+    let selectedStatus = "present";
+    let uploadedReceiptBase64 = "";
+    let uploadedAvatarBase64 = "";
+    let adminPassword = "";
+
+    window.onload = () => {
+      const savedName = localStorage.getItem("futsal_name");
+      const savedPhone = localStorage.getItem("futsal_phone");
+      if (savedName) {
+        document.getElementById("playerName").value = savedName;
+        document.getElementById("invitedBy").value = savedName;
+      }
+      if (savedPhone) document.getElementById("playerPhone").value = savedPhone;
+      loadData();
+    };
+
+    function showLoader(show) {
+      document.getElementById("loader").classList.toggle("hidden", !show);
+    }
+
+    function switchTab(tabName) {
+      ["register", "list", "guests", "admin"].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.add("hidden");
+        document.getElementById(`nav-${t}`).classList.remove("tab-active");
+        document.getElementById(`nav-${t}`).classList.add("text-gray-400");
+      });
+      document.getElementById(`tab-${tabName}`).classList.remove("hidden");
+      document.getElementById(`nav-${tabName}`).classList.add("tab-active");
+      document.getElementById(`nav-${tabName}`).classList.remove("text-gray-400");
+    }
+
+    function selectStatus(status) {
+      selectedStatus = status;
+      const btnP = document.getElementById("btnPresent");
+      const btnA = document.getElementById("btnAbsent");
+      const recSec = document.getElementById("receiptSection");
+
+      if (status === "present") {
+        btnP.className = "p-3 rounded-xl border-2 border-emerald-500 bg-emerald-500/20 text-emerald-300 font-bold text-xs flex flex-col items-center gap-1 transition";
+        btnA.className = "p-3 rounded-xl border border-white/15 bg-black/30 text-gray-400 font-bold text-xs flex flex-col items-center gap-1 transition";
+        recSec.classList.remove("hidden");
+      } else {
+        btnA.className = "p-3 rounded-xl border-2 border-rose-500 bg-rose-500/20 text-rose-300 font-bold text-xs flex flex-col items-center gap-1 transition";
+        btnP.className = "p-3 rounded-xl border border-white/15 bg-black/30 text-gray-400 font-bold text-xs flex flex-col items-center gap-1 transition";
+        recSec.classList.add("hidden");
+      }
+    }
+
+    function compressImage(file, maxWidth, quality, callback) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement("canvas");
+          const scale = maxWidth / img.width;
+          canvas.width = img.width > maxWidth ? maxWidth : img.width;
+          canvas.height = img.width > maxWidth ? img.height * scale : img.height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          callback(canvas.toDataURL("image/jpeg", quality));
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function handleReceiptUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      compressImage(file, 900, 0.75, (base64) => {
+        uploadedReceiptBase64 = base64;
+        document.getElementById("receiptPreview").src = base64;
+        document.getElementById("receiptPreview").classList.remove("hidden");
+        document.getElementById("uploadPlaceholder").classList.add("hidden");
+      });
+    }
+
+    function handleAvatarUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      compressImage(file, 300, 0.8, (base64) => {
+        uploadedAvatarBase64 = base64;
+        document.getElementById("avatarPreview").src = base64;
+      });
+    }
+
+    function copyCard() {
+      const card = appData.settings.cardNumber || "";
+      navigator.clipboard.writeText(card);
+      alert("شماره کارت کپی شد: " + card);
+    }
+
+    function formatNumber(num) {
+      return Number(num || 0).toLocaleString("fa-IR");
+    }
+
+    async function loadData() {
+      showLoader(true);
+      try {
+        const res = await fetch(`${SCRIPT_URL}?action=getData`);
+        const data = await res.json();
+        if (data.status === "success") {
+          appData = data;
+          renderUI();
+        }
+      } catch (err) {
+        console.error(err);
+        alert("خطا در ارتباط با سرور. اینترنت خود را بررسی کنید.");
+      }
+      showLoader(false);
+    }
+
+    function renderUI() {
+      const s = appData.settings;
+      const presentPlayers = appData.players.filter(p => p.status === "present");
+      const absentPlayers = appData.players.filter(p => p.status === "absent");
+      const totalHeadcount = presentPlayers.length + appData.guests.length;
+      const totalRent = Number(s.totalRent || 0);
+
+      // تقسیم خودکار هزینه بین حاضرین + مهمان‌ها (رند شده به بالا تا ۱۰۰۰ تومان)
+      let perPersonFee = 0;
+      if (totalRent > 0 && totalHeadcount > 0) {
+        perPersonFee = Math.ceil((totalRent / totalHeadcount) / 1000) * 1000;
+      }
+
+      document.getElementById("hdrLocation").innerText = s.location || "سالن فوتسال";
+      document.getElementById("hdrDate").innerText = s.date || "---";
+      document.getElementById("hdrTime").innerText = s.time || "---";
+      document.getElementById("hdrTotalRent").innerText = formatNumber(totalRent);
+      document.getElementById("hdrTotalHeadcount").innerText = totalHeadcount;
+      document.getElementById("hdrFee").innerText = totalHeadcount > 0 ? `${formatNumber(perPersonFee)} ت` : "در انتظار ثبت‌نام";
+
+      document.getElementById("cardNumberDisplay").innerText = s.cardNumber || "---";
+      document.getElementById("cardOwnerDisplay").innerText = s.cardOwner || "---";
+
+      // اگر کاربر قبلاً پروفایل داشته، عکسش را در تب اول هم نشان بده
+      const currentName = document.getElementById("playerName").value.trim();
+      const me = appData.players.find(p => p.name === currentName);
+      if (me && me.avatarUrl && !uploadedAvatarBase64) {
+        document.getElementById("avatarPreview").src = me.avatarUrl;
+      }
+
+      // پر کردن فرم تنظیمات مدیر
+      document.getElementById("setDate").value = s.date || "";
+      document.getElementById("setTime").value = s.time || "";
+      document.getElementById("setLocation").value = s.location || "";
+      document.getElementById("setTotalRent").value = s.totalRent || "";
+      document.getElementById("setCard").value = s.cardNumber || "";
+      document.getElementById("setOwner").value = s.cardOwner || "";
+
+      // آمار تب ۲
+      document.getElementById("countPresent").innerText = presentPlayers.length;
+      document.getElementById("countAbsent").innerText = absentPlayers.length;
+      document.getElementById("countGuests").innerText = appData.guests.length;
+
+      // رندر لیست بازیکنان اصلی با عکس پروفایل
+      const pContainer = document.getElementById("playersListContainer");
+      pContainer.innerHTML = "";
+      appData.players.forEach(p => {
+        const avatar = p.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=004D98&color=EDBB00&bold=true`;
+
+        let statusBadge = `<span class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">نامشخص</span>`;
+        if (p.status === "present") {
+          statusBadge = `<span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">حاضر ✅</span>`;
+        } else if (p.status === "absent") {
+          statusBadge = `<span class="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">غایب ❌</span>`;
+        }
+
+        let payBadge = "";
+        if (p.status === "present") {
+          if (p.verified === "approved") {
+            payBadge = `<span class="text-[10px] text-emerald-400 font-bold">💳 تایید شده</span>`;
+          } else if (p.verified === "pending") {
+            payBadge = `<span class="text-[10px] gold-accent font-bold">⏳ در انتظار تایید فیش</span>`;
+          } else {
+            payBadge = `<span class="text-[10px] text-gray-400">در انتظار واریز</span>`;
+          }
+        }
+
+        pContainer.innerHTML += `
+          <div class="bg-black/35 p-3 rounded-xl border border-white/5 flex justify-between items-center">
+            <div class="flex items-center gap-2.5">
+              <img src="${avatar}" onclick="openModal('${avatar}')" class="w-10 h-10 rounded-full object-cover border border-yellow-400/50 cursor-pointer" />
+              <div>
+                <p class="text-xs font-bold text-white">${p.name}</p>
+                <div class="mt-0.5">${payBadge}</div>
+              </div>
+            </div>
+            <div>${statusBadge}</div>
+          </div>
+        `;
+      });
+
+      // رندر لیست مهمان‌ها
+      const gContainer = document.getElementById("guestsListContainer");
+      gContainer.innerHTML = appData.guests.length === 0 ? `<p class="text-xs text-gray-500 text-center py-3">هنوز مهمانی ثبت نشده است.</p>` : "";
+      appData.guests.forEach(g => {
+        const paidTag = g.paidStatus === "paid"
+          ? `<span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">تسویه شد ✅</span>`
+          : `<span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300">بدهکار (به عهده معرف)</span>`;
+
+        gContainer.innerHTML += `
+          <div class="bg-black/35 p-3 rounded-xl border border-white/5 flex justify-between items-center">
+            <div>
+              <p class="text-xs font-bold text-white">${g.guestName}</p>
+              <p class="text-[11px] text-gray-400 mt-0.5">معرف: <span class="gold-accent font-semibold">${g.invitedBy}</span></p>
+            </div>
+            <div>${paidTag}</div>
+          </div>
+        `;
+      });
+
+      renderAdminDashboard();
+    }
+
+    function renderAdminDashboard() {
+      // ۱. لیست فیش‌ها
+      const rContainer = document.getElementById("adminReceiptsContainer");
+      rContainer.innerHTML = "";
+      const withReceipts = appData.players.filter(p => p.receiptUrl);
+      if (withReceipts.length === 0) {
+        rContainer.innerHTML = `<p class="text-xs text-gray-500">هنوز فیشی آپلود نشده است.</p>`;
+      }
+      withReceipts.forEach(p => {
+        rContainer.innerHTML += `
+          <div class="bg-black/40 p-3 rounded-xl border border-white/10 space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-bold text-white">${p.name} ${p.verified === 'approved' ? '✅' : '⏳'}</span>
+              <button onclick="openModal('${p.receiptUrl}')" class="text-[11px] px-2.5 py-1 rounded-lg bg-blue-600/30 text-blue-300 border border-blue-500/30">👁️ مشاهده عکس فیش</button>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="adminCall('verifyPayment', { id: '${p.id}', verifiedStatus: 'approved' })" class="flex-1 py-1.5 rounded-lg bg-emerald-600/80 text-white text-[11px] font-bold">✅ تایید واریز</button>
+              <button onclick="adminCall('verifyPayment', { id: '${p.id}', verifiedStatus: 'unpaid' })" class="flex-1 py-1.5 rounded-lg bg-rose-600/80 text-white text-[11px] font-bold">❌ رد و حذف فیش</button>
+            </div>
+          </div>
+        `;
+      });
+
+      // ۲. مدیریت کامل بازیکنان اصلی
+      const apContainer = document.getElementById("adminPlayersContainer");
+      apContainer.innerHTML = "";
+      appData.players.forEach(p => {
+        apContainer.innerHTML += `
+          <div class="bg-black/40 p-2.5 rounded-xl border border-white/5 flex justify-between items-center gap-2">
+            <span class="text-xs text-white font-semibold truncate flex-1">${p.name}</span>
+            <div class="flex items-center gap-1">
+              <button onclick="adminCall('setPlayerStatus', { id: '${p.id}', newStatus: 'present' })" class="px-2 py-1 rounded text-[10px] ${p.status === 'present' ? 'bg-emerald-600 text-white' : 'bg-gray-800 text-gray-400'}">حاضر</button>
+              <button onclick="adminCall('setPlayerStatus', { id: '${p.id}', newStatus: 'absent' })" class="px-2 py-1 rounded text-[10px] ${p.status === 'absent' ? 'bg-rose-600 text-white' : 'bg-gray-800 text-gray-400'}">غایب</button>
+              <button onclick="deletePlayer('${p.id}', '${p.name}')" class="px-2 py-1 rounded bg-rose-900/60 text-rose-300 text-[10px]">🗑️</button>
+            </div>
+          </div>
+        `;
+      });
+
+      // ۳. مدیریت کامل مهمان‌ها
+      const agContainer = document.getElementById("adminGuestsContainer");
+      agContainer.innerHTML = appData.guests.length === 0 ? `<p class="text-xs text-gray-500">مهمانی وجود ندارد.</p>` : "";
+      appData.guests.forEach(g => {
+        agContainer.innerHTML += `
+          <div class="bg-black/40 p-2.5 rounded-xl flex justify-between items-center gap-2">
+            <span class="text-xs text-white truncate flex-1">${g.guestName} <span class="text-gray-400 text-[10px]">(${g.invitedBy})</span></span>
+            <div class="flex items-center gap-1.5">
+              <button onclick="adminCall('toggleGuestPaid', { id: '${g.id}' })" class="text-[10px] px-2.5 py-1 rounded-lg ${g.paidStatus === 'paid' ? 'bg-emerald-600 text-white' : 'bg-amber-600/80 text-white'}">
+                ${g.paidStatus === 'paid' ? 'تسویه شد' : 'ثبت تسویه'}
+              </button>
+              <button onclick="adminCall('deleteGuest', { id: '${g.id}' })" class="px-2 py-1 rounded bg-rose-900/60 text-rose-300 text-[10px]">🗑️</button>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    async function submitPlayer() {
+      const name = document.getElementById("playerName").value.trim();
+      const phone = document.getElementById("playerPhone").value.trim();
+      if (!name) return alert("لطفاً نام و نام خانوادگی خود را وارد کنید.");
+
+      localStorage.setItem("futsal_name", name);
+      localStorage.setItem("futsal_phone", phone);
+
+      showLoader(true);
+      await fetch(SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "upsertPlayer",
+          name: name,
+          phone: phone,
+          status: selectedStatus,
+          receiptBase64: selectedStatus === "present" ? uploadedReceiptBase64 : "",
+          avatarBase64: uploadedAvatarBase64
+        })
+      });
+      uploadedReceiptBase64 = "";
+      uploadedAvatarBase64 = "";
+      document.getElementById("receiptPreview").classList.add("hidden");
+      document.getElementById("uploadPlaceholder").classList.remove("hidden");
+      await loadData();
+      switchTab("list");
+    }
+
+    async function submitGuest() {
+      const guestName = document.getElementById("guestName").value.trim();
+      const invitedBy = document.getElementById("invitedBy").value.trim();
+      if (!guestName || !invitedBy) return alert("نام مهمان و نام معرف را وارد کنید.");
+
+      showLoader(true);
+      await fetch(SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "addGuest",
+          guestName: guestName,
+          invitedBy: invitedBy
+        })
+      });
+      document.getElementById("guestName").value = "";
+      await loadData();
+    }
+
+    async function unlockAdmin() {
+      const pass = document.getElementById("adminPassInput").value;
+      if (!pass) return;
+      showLoader(true);
+      const res = await fetch(SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "checkAdmin", password: pass })
+      });
+      const data = await res.json();
+      showLoader(false);
+
+      if (data.status === "success") {
+        adminPassword = pass;
+        document.getElementById("adminLoginBox").classList.add("hidden");
+        document.getElementById("adminDashboard").classList.remove("hidden");
+      } else {
+        alert(data.message || "رمز عبور اشتباه است!");
+      }
+    }
+
+    async function adminCall(subAction, payload = {}) {
+      showLoader(true);
+      const res = await fetch(SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "adminAction",
+          password: adminPassword,
+          subAction: subAction,
+          ...payload
+        })
+      });
+      const data = await res.json();
+      if (data.status === "error") alert(data.message);
+      await loadData();
+    }
+
+    function saveAdminSettings() {
+      const newPass = document.getElementById("setNewAdminPass").value.trim();
+      adminCall("updateSettings", {
+        newPassword: newPass,
+        settings: {
+          date: document.getElementById("setDate").value,
+          time: document.getElementById("setTime").value,
+          location: document.getElementById("setLocation").value,
+          totalRent: document.getElementById("setTotalRent").value,
+          cardNumber: document.getElementById("setCard").value,
+          cardOwner: document.getElementById("setOwner").value
+        }
+      }).then(() => {
+        if (newPass) {
+          adminPassword = newPass;
+          document.getElementById("setNewAdminPass").value = "";
+          alert("تنظیمات و رمز جدید مدیر ذخیره شد.");
+        }
+      });
+    }
+
+    function adminAddPlayer() {
+      const name = document.getElementById("adminNewPlayerName").value.trim();
+      if (!name) return;
+      document.getElementById("adminNewPlayerName").value = "";
+      adminCall("adminAddPlayer", { name: name });
+    }
+
+    function deletePlayer(id, name) {
+      if (!confirm(`آیا بازیکن «${name}» به طور کامل از لیست تیم حذف شود؟`)) return;
+      adminCall("deletePlayer", { id: id });
+    }
+
+    function resetNewWeek() {
+      if (!confirm("وضعیت حضور همه بازیکنان ریست شود و مهمان‌ها پاک شوند؟")) return;
+      adminCall("resetWeek");
+    }
+
+    function openModal(url) {
+      document.getElementById("modalImg").src = url;
+      document.getElementById("imageModal").classList.remove("hidden");
+    }
+
+    function closeModal() {
+      document.getElementById("imageModal").classList.add("hidden");
+    }
+  </script>
+</body>
+</html>
